@@ -19,6 +19,7 @@ typedef BOOL(*ChangeHandle)(
 	__in struct SuffixHandler Handlers[],
 	__in DWORD HandlerArraySize);
 
+
 typedef struct SuffixHandler {
 	FileHandle	Handler;
 	wstring		FileSuffix;

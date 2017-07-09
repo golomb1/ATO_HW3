@@ -156,7 +156,6 @@ DWORD WINAPI ServiceWorkerThread(LPVOID lpParam)
 	handlers[2].FileSuffix = wstring(L"dll");
 	handlers[2].Handler = &HandleDLL;
 
-	///CloseHandle(CreateFile(L"C:\\AAA.txt", GENERIC_WRITE, NULL, NULL, CREATE_ALWAYS, NULL, NULL));
-	ListenOnFolder(L"C:\\A", &HandleFileChange, handlers, 3);
+	ListenOnFolder(L"C:\\ATO_HW3", &HandleFileChange, handlers, 3);
 	return ERROR_SUCCESS;
 }

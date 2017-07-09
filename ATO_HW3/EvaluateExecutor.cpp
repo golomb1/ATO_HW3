@@ -153,7 +153,6 @@ VOID ListenOnFolder(
 			nullptr))
 		{
 			Sleep(100);
-			//CloseHandle(CreateFile(L"C:\\CCCC.txt", GENERIC_WRITE, NULL, NULL, CREATE_ALWAYS, NULL, NULL));
 			FILE_NOTIFY_INFORMATION* pFileInfo = &FileNotifyInfo[0];
 			while (pFileInfo->NextEntryOffset) {
 				ChangeHandler(pFileInfo, Handlers, HandlerArraySize);

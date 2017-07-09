@@ -1,2 +1,0 @@
-sc create "ATO_HW3" binPath="C:\Users\golombt\Source\Repos\ATO_HW3\Debug\ATO_HW3.exe"
-net start ATO_HW3

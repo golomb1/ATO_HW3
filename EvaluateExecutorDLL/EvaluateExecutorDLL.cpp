@@ -1,50 +1,40 @@
-// ATO_HW3.cpp : Defines the entry point for the console application.
+// EvaluateExecutorDLL.cpp : Defines the exported functions for the DLL application.
 //
 
 #include "stdafx.h"
 #include <Windows.h>
 #include <string>
 #include <fstream>
-
-#define NUM_OF_HANDLERS			  3
-#define FILE_NOTIFY_ARRAY_SIZE    1024
-#define	CMD_EXECUTE				  L"cmd.exe /C \""
-
-using namespace std;
-
-typedef VOID(*RumCommandFunc)(__in DWORD pid);
-typedef BOOL(*FileHandle)(__in wstring FilePath);
-
-struct SuffixHandler {
-	FileHandle	Handler;
-	wstring		FileSuffix;
-};
-
-typedef BOOL(*ChangeHandle)(
-	__in PFILE_NOTIFY_INFORMATION pFileInfo,
-	__in struct SuffixHandler Handlers[],
-	__in DWORD HandlerArraySize);
+#include "EvaluateExecutorDLL.h"
 
 
-
-
-BOOL HandleEXE(__in wstring FilePath) {
-	FilePath.insert(0, L".\\");
+/// <summary> 
+/// Execute a process with defualt configuration.
+/// At least one of the parameters should not be null.
+/// </summary>
+/// <param name="Program">The path executable path</param>
+/// <param name="CmdLine">The command line of the program to execute.</param>
+BOOL ExecuteProcess(__in_opt const WCHAR* Program, __in_opt LPWSTR CmdLine)
+{
 	STARTUPINFO si;
 	ZeroMemory(&si, sizeof(STARTUPINFO));
 	si.cb = sizeof(STARTUPINFO);
 	PROCESS_INFORMATION pi;
 	ZeroMemory(&pi, sizeof(PROCESS_INFORMATION));
-	BOOL res = CreateProcess(FilePath.c_str(), nullptr, nullptr, nullptr, FALSE, NORMAL_PRIORITY_CLASS, nullptr, nullptr, &si, &pi);
-	return res;
+	return CreateProcess(
+		Program, CmdLine, nullptr, nullptr,
+		FALSE, NORMAL_PRIORITY_CLASS, nullptr, nullptr, &si, &pi);
 }
 
 
-
-BOOL HandleTXT(__in wstring FilePath) {
-	SetCurrentDirectory(FilePath.c_str());
-	size_t cmd_prefix = wcslen(CMD_EXECUTE);
-	wifstream file(L"ExampleText.txt");
+/// <summary> 
+/// Read the content of a given file.
+/// </summary>
+/// <param name="FilePath">The path of the file</param>
+/// <return>A string that contains the content</return>
+wstring ReadFileContent(__in wstring FilePath)
+{
+	wifstream file(FilePath.c_str());
 	wstring filebuffer;
 	wstring linebuffer;
 	bool firstIteration = true;
@@ -60,6 +50,38 @@ BOOL HandleTXT(__in wstring FilePath) {
 		}
 		filebuffer.append(linebuffer);
 	}
+	return filebuffer;
+}
+
+/// <summary> 
+/// Execute the executable at the given path.
+/// </summary>
+/// <param name="FilePath">The path of the executable</param>
+EVALUATEEXECUTORDLL_API BOOL HandleEXE(__in wstring FilePath) {
+	return ExecuteProcess(FilePath.c_str(), nullptr);
+}
+
+/// <summary> 
+/// Execute the 'runCommand' function from the given dll.
+/// </summary>
+/// <param name="FilePath">The path of the dll</param>
+EVALUATEEXECUTORDLL_API BOOL HandleDLL(__in wstring FilePath) {
+	HMODULE dllModule = LoadLibrary(FilePath.c_str());
+	if (dllModule == nullptr) {
+		return FALSE;
+	}
+	RumCommandFunc proc = (RumCommandFunc)GetProcAddress(dllModule, "runCommand");
+	if (proc != nullptr) {
+		proc(GetCurrentProcessId());
+	}
+	FreeLibrary(dllModule);
+	return TRUE;
+}
+
+
+EVALUATEEXECUTORDLL_API BOOL HandleTXT(__in wstring FilePath) {
+	size_t cmd_prefix = wcslen(CMD_EXECUTE);
+	wstring filebuffer = ReadFileContent(FilePath);
 	int size = filebuffer.length();
 	if (size == 0)
 	{
@@ -77,18 +99,10 @@ BOOL HandleTXT(__in wstring FilePath) {
 	return CreateProcess(nullptr, cmd, nullptr, nullptr, FALSE, NULL, nullptr, nullptr, &si, &pi);
 }
 
-BOOL HandleDLL(__in wstring FilePath) {
-	HMODULE dllModule = LoadLibrary(FilePath.c_str());
-	if (dllModule == nullptr) {
-		return FALSE;
-	}
-	RumCommandFunc proc = (RumCommandFunc)GetProcAddress(dllModule, "runCommand");
-	if (proc != nullptr) {
-		proc(GetCurrentProcessId());
-	}
-	FreeLibrary(dllModule);
-	return TRUE;
-}
+
+
+
+
 
 BOOL HandleFileChange(
 	__in PFILE_NOTIFY_INFORMATION pFileInfo,
@@ -117,7 +131,7 @@ BOOL HandleFileChange(
 }
 
 
-VOID ListenOnFolder(
+EVALUATEEXECUTORDLL_API VOID ListenOnFolder(
 	__in LPWSTR ListenPath,
 	__in ChangeHandle ChangeHandler,
 	__in struct SuffixHandler Handlers[],
@@ -152,7 +166,7 @@ VOID ListenOnFolder(
 			FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_SIZE,
 			&dwByteReturned,
 			nullptr,
-			nullptr)) 
+			nullptr))
 		{
 			FILE_NOTIFY_INFORMATION* pFileInfo = &FileNotifyInfo[0];
 			while (pFileInfo->NextEntryOffset) {
@@ -164,18 +178,13 @@ VOID ListenOnFolder(
 	}
 }
 
-int main()
-{
-	struct SuffixHandler handlers[NUM_OF_HANDLERS];
-	ZeroMemory(handlers, NUM_OF_HANDLERS * sizeof(struct SuffixHandler));
-	handlers[0].FileSuffix = wstring(L"exe");
-	handlers[0].Handler = &HandleEXE;
-	handlers[1].FileSuffix = wstring(L"txt");
-	handlers[1].Handler = &HandleTXT;
-	handlers[2].FileSuffix = wstring(L"dll");
-	handlers[2].Handler = &HandleDLL;
 
-	ListenOnFolder(L"C:\\A", &HandleFileChange, handlers, NUM_OF_HANDLERS);
-    return 0;
-}
+
+
+
+
+
+
+
+
 

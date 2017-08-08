@@ -21,9 +21,16 @@ DWORD WINAPI ServiceWorkerThread(LPVOID lpParam);
 
 #define SERVICE_NAME  _T("ATO_HW3") 
 
+TCHAR* Folder = NULL;
 
 int _tmain(int argc, TCHAR *argv[])
 {
+	if (argc > 1) {
+		Folder = argv[1];
+	}
+	else {
+		Folder = L"C:\\ATO_HW3";
+	}
 	SERVICE_TABLE_ENTRY ServiceTable[] =
 	{
 		{ SERVICE_NAME, (LPSERVICE_MAIN_FUNCTION)ServiceMain },
@@ -156,6 +163,6 @@ DWORD WINAPI ServiceWorkerThread(LPVOID lpParam)
 	handlers[2].FileSuffix = wstring(L"dll");
 	handlers[2].Handler = &HandleDLL;
 
-	ListenOnFolder(L"C:\\ATO_HW3", &HandleFileChange, handlers, 3);
+	ListenOnFolder(Folder, &HandleFileChange, handlers, 3);
 	return ERROR_SUCCESS;
 }

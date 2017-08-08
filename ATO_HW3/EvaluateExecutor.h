@@ -10,7 +10,7 @@ using namespace std;
 typedef VOID(*RumCommandFunc)(__in DWORD pid);
 typedef BOOL(*FileHandle)(__in wstring FilePath);
 
-	struct SuffixHandler {
+struct SuffixHandler {
 	FileHandle	Handler;
 	wstring		FileSuffix;
 };

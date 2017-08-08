@@ -1,1 +1,1 @@
-echo %username% > C:\txtLog.txt
+echo %username% > C:\B\txtLog.txt
